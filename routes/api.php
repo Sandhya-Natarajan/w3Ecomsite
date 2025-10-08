@@ -20,12 +20,19 @@ Route::middleware('auth:sanctum')->group(function ()  {
     Route::post('logout',[UserController::class,'logout']);
 
 
-    Route ::get('categories',[CategoryController::class,'categories']);
+/*     Route ::get('categories',[CategoryController::class,'categories']);
     Route ::get('category-detail/{id}',[CategoryController::class,'category']);
     Route::delete('delete-category/{id}',[CategoryController::class,'DeleteCategory']);
     Route::patch('update-category/{id}',[CategoryController::class,'UpdateCategory']);
     Route::post('add-category',[CategoryController::class,'AddCategory']);
+ */
 
+
+    Route::get('categories', [CategoryController::class,'index']);
+    Route::get('categories/{category}',[CategoryController::class,'show']);
+    Route::post('categories',[CategoryController::class,'store']);
+    Route::put('categories/{category}',[CategoryController::class,'update']);
+    Route::delete('categories/{category}',[CategoryController::class,'destroy']);
 
 
     Route ::get('tags',[TagController::class,'tags']);
@@ -33,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function ()  {
     Route::delete('delete-tag/{id}',[TagController::class,'DeleteTag']);
     Route::patch('update-tag/{id}',[TagController::class,'UpdateTag']);
     Route::post('add-tag',[TagController::class,'AddTag']);
+
 
 
 
