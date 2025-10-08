@@ -4,37 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductTag;
-
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
 
     protected $fillable = [
         'name',
-        'cat_id',
-        'desc',
+        'category_id',
+        'description',
         'price',
         'stock'
     ];
 
-    // Relationship with ProductTag
-    public function productTag() {
 
-        return $this->hasMany(ProductTag::class);
-    }
+    /**
+     * Many-to-Many relationship with Tag
+     */
 
-
-
-    // Cascade delete Tags when Product is deleted
-    protected static function boot()
+    public function tags(): BelongsToMany
     {
-        parent::boot();
-
-        static::deleting(function ($product) {
-            if ($product->productTag) {
-                $product->productTag()->delete();
-            }
-        });
+        return $this->belongsToMany(Tag::class)->withTimestamps();
     }
 
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
 }

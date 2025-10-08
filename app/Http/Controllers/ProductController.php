@@ -6,115 +6,101 @@ use App\Http\Requests\ProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Product;
-use App\Models\ProductTag;
+use App\Models\Tag;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductCollection;
-
+use App\Models\Category;
+use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {
 
-    //Display the specified resource.
-    public function product($id)
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): JsonResponse
     {
-        $productId = $id;
-        $product = Product::with('productTag')->find($productId);
-        if(!$product) {
-            return response()->json(['message'=>'Product not found'],404);
+        $query = Product::query();
+
+        if (!empty($search = $request->get("search"))) {
+            $query->where("name", "like", "%" . $search . "%")
+                ->orWhere("description", "like", "%" . $search . "%");
         }
-        return new ProductResource($product);
+
+        $products = $query->with(['category', 'tags'])
+            ->latest()
+            ->paginate($request->get("per_page", 10));
+
+        return response()->json([
+            "data" => ProductResource::collection($products),
+            "pagination" => [
+                "current_page" => $products->currentPage(),
+                "last_page" => $products->lastPage(),
+                "per_page" => $products->perPage(),
+                "total" => $products->total(),
+            ]
+        ], 200);
     }
 
-
-
-    //Display a listing of the resource.
-    public function products()
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(ProductRequest $request): JsonResponse
     {
-        $products = Product::with('productTag')->get();
-        if($products->isEmpty()) {
-            return response()->json(['message'=>'Product not found'],404);
+        $product = Product::create($request->validated());
+
+        if ($request->filled('tag_id')) {
+            $product->tags()->sync($request->tag_id);
         }
-        return new ProductCollection($products);
+
+        $product->load(['category', 'tags']);
+
+        return response()->json([
+            'data' => new ProductResource($product->load('tags')),
+            'message' => "Product Created Successfully",
+        ], 201);
     }
 
-
-
-    //Store a newly created resource in storage.
-    public function AddProduct(ProductRequest $request)
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product): JsonResponse
     {
-        //Create Product
-        $product = Product::create([
-            'name'=> $request['name'],
-            'cat_id'=> $request['cat_id'],
-            'desc'=> $request['desc'],
-            'price'=> $request['price'],
-            'stock'=> $request['stock']
-        ]);
+        $product->load(['category', 'tags']);
 
-        //Create Product Tags
-         if ($request->has('tag_id')) {
-            foreach ($request->tag_id as $tagId) {
-                ProductTag::create([
-                    'product_id' => $product->id,
-                    'tag_id' => $tagId,
-                ]);
-            }
-        }
-
-        return response()->json(['message'=>'Product Created Successfully...']);
-
+        return response()->json([
+            'data' => new ProductResource($product->load('tags')),
+        ], 201);
     }
 
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(ProductRequest $request, Product $product): JsonResponse
+    {
+        $product->update($request->validated());
 
-
-    //Update the specified resource in storage.
-    public function UpdateProduct(ProductRequest $request){
-
-         // Find product
-        $product = Product::find($request->id);
-        if(!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
-        }
-
-        // Update product info
-        $product->update([
-            'name' => $request->name,
-            'cat_id'=> $request->cat_id,
-            'desc'=> $request->desc,
-            'price' => $request->price,
-            'stock'=> $request->stock
-        ]);
-
-        // Delete old tags
-        $product->productTag()->delete();
-
-        // Add new tags
         if ($request->has('tag_id')) {
-            foreach ($request->tag_id as $tagId) {
-                ProductTag::create([
-                    'product_id' => $product->id,
-                    'tag_id' => $tagId,
-                ]);
-            }
+            $product->tags()->sync($request->tag_id);
         }
 
+        $product->load(['category', 'tags']);
 
-        return response()->json(['message' => 'Product Updated Successfully']);
-
-
+        return response()->json([
+            "data" => new ProductResource($product),
+            "message" => "Product Updated Successfully",
+        ], 201);
     }
 
-
-
-     //Remove the specified resource from storage.
-    public function DeleteProduct($id)
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Product $product): JsonResponse
     {
-        $productId = $id;
-        $product = Product::find($productId);
         $product->delete();
 
-        return response()->json(['message'=>'Product Deleted Successfully...']);
-
+        return response()->json([
+            "message" => "Product Deleted Successfully",
+        ], 200);
     }
-
 }
