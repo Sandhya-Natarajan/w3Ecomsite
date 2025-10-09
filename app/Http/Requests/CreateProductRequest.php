@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductRequest extends FormRequest
+class CreateProductRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,7 +23,7 @@ class ProductRequest extends FormRequest
     {
         return [
             'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:100',
+            'name' => 'required|string|max:100|unique:products,name',
             'description' => 'required|string',
             'price' => 'required|numeric',
             'stock' => 'required|string',
@@ -38,6 +38,7 @@ class ProductRequest extends FormRequest
             'category_id.required' => 'Category is required',
             'category_id.exists' => 'Selected Category does not exist',
             'tag_id.*.exists' => 'One or more entered tags do not exist',
+            'name' => 'The Name has already been taken',
         ];
     }
 }

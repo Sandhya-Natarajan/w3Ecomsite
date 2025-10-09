@@ -24,19 +24,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('products', ProductController::class);
 
+    Route::apiResource('orders', OrderController::class);
+
 
     Route::get('tags', [TagController::class, 'tags']);
     Route::get('tag-detail/{id}', [TagController::class, 'tag']);
     Route::delete('delete-tag/{id}', [TagController::class, 'DeleteTag']);
     Route::patch('update-tag/{id}', [TagController::class, 'UpdateTag']);
     Route::post('add-tag', [TagController::class, 'AddTag']);
-
-
-    Route::post('add-order', [OrderController::class, 'AddOrder']);
-    Route::get('orders', [OrderController::class, 'orders']);
-    Route::get('order-detail/{id}', [OrderController::class, 'order']);
-    Route::patch('update-order/{id}', [OrderController::class, 'updateOrder']);
-    Route::delete('delete-order/{id}', [OrderController::class, 'DeleteOrder']);
 });
 
 

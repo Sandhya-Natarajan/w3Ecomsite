@@ -6,177 +6,126 @@ use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Order;
-use App\Models\OrderDetail;
+use App\Models\Product;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderCollection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Product;
 
 
 
 class OrderController extends Controller
 {
 
-
-    //Display the specified resource.
-    public function order($id)
+    public function index(Request $request): JsonResponse
     {
-        $orderId = $id;
-        $order = Order::with('orderDetails.product')->find($orderId);
 
-        if (!$order) {
-            return response()->json(['message' => 'Order not found'], 404);
-        }
+        $orders = Order::with('products')
+            ->search($request->get('search'))
+            ->latest()
+            ->paginate($request->get('per_page', 10));
 
-        return new OrderResource($order);
+        return response()->json([
+            'data' => OrderResource::collection($orders),
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ], 200);
     }
 
-
-
-
-    //Display a listing of the resource.
-    public function orders()
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(OrderRequest $request): JsonResponse
     {
-        $orders = Order::with('orderDetails.product')->get();
+        $validated = $request->validated();
 
-        if ($orders->isEmpty()) {
-            return response()->json(['message' => 'No orders found'], 404);
+        if (Order::today()->count() >= 5) {
+            return response()->json(['message' => 'Maximum 2 orders per day allowed'], 403);
         }
 
-        return new OrderCollection($orders);
-    }
+        $total = collect($validated['products'])->sum(fn($p) => $p['quantity'] * $p['price']);
 
-
-
-    //Store a newly created resource in storage.
-    public function AddOrder(OrderRequest $request)
-    {
-
-        $userId = Auth::id();
-        $products = $request->input('products',[]);
-        $status = $request->input('status');
-
-        // Calculate total order amount
-        $totalAmount = 0;
-        foreach ($products as $item) {
-            $totalAmount += $item['price'] * $item['qty'];
-        }
-
-        // Create order
         $order = Order::create([
-            'user_id' => $userId,
-            'status' => $status,
-            'total_amount' => $totalAmount,
+            'user_id' => auth()->id(),
+            'total_amount' => $total,
+            'status'       => $request->status,
         ]);
 
-        // Insert order details
-        foreach ($products as $item) {
-            $order->orderDetails()->create([
-                'product_id' => $item['product_id'],
-                'quantity'   => $item['qty'],
-                'price'      => $item['price'],
-            ]);
-        }
+        $pivotData = collect($validated['products'])->mapWithKeys(fn($p) => [
+            $p['product_id'] => [
+                'quantity' => $p['quantity'],
+                'price' => $p['price'],
+            ],
+        ]);
 
-        // Load order details with product info
-        $order->load('orderDetails.product');
+        $order->products()->attach($pivotData);
 
-        // Build response
+        //Load user and products (with pivot data)
+        $order->load('user', 'products');
+
         return response()->json([
-            'message' => 'Order placed successfully',
-            'order' => [
-                'order_id' => $order->id,
-                'user_id' => $order->user_id,
-                'status' => $order->status,
-                'total_amount' => $order->total_amount,
-                'products' => $order->orderDetails->map(function ($detail) {
-                    return [
-                        'product_id' => $detail->product_id,
-                        'product_name' => $detail->product->name ?? null,
-                        'price' => $detail->price,
-                        'quantity' => $detail->quantity,
-                        'total' => $detail->price * $detail->quantity,
-                    ];
-                }),
-            ]
+            'message' => 'Order created successfully',
+            'data' => new OrderResource($order),
         ], 201);
     }
 
-
-
-
-    //Update the specified resource in storage.
-    public function updateOrder(OrderRequest $request, $id)
+    /**
+     * Display the specified resource.
+     */
+    public function show(Order $order): JsonResponse
     {
-        // Find the order
-        $order = Order::with('orderDetails')->find($id);
 
-        if (!$order) {
-            return response()->json(['message' => 'Order not found'], 404);
-        }
-
-        // Update status if provided
-        if ($request->has('status')) {
-            $order->status = $request->input('status');
-        }
-
-        // Update products if provided
-        if ($request->has('products')) {
-            $products = $request->input('products',[]);
-
-            // Delete existing order details
-            $order->orderDetails()->delete();
-
-            $totalAmount = 0;
-
-            // Insert new order details
-            foreach ($products as $item) {
-                $order->orderDetails()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['qty'],
-                    'price' => $item['price'],
-                ]);
-
-                $totalAmount += $item['price'] * $item['qty'];
-            }
-
-            // Update total amount
-            $order->total_amount = $totalAmount;
-        }
-
-        $order->save();
-
-        // Load order details with product info
-        $order->load('orderDetails.product');
+        $order->load('user', 'products');
 
         return response()->json([
-            'message' => 'Order updated successfully',
-            'order' => new OrderResource($order)
+            'data' => new OrderResource($order)
         ], 200);
     }
 
-
-
-    //Remove the specified resource from storage.
-    public function DeleteOrder($id)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(OrderRequest $request, Order $order): JsonResponse
     {
-        $order = Order::find($id);
+        // Recalculate total amount
+        $total = collect($request->products)->sum(fn($p) => $p['quantity'] * $p['price']);
 
-        if (!$order) {
-            return response()->json([
-                'message' => 'Order not found'
-            ], 404);
+        // Update order details
+        $order->update(array_merge($request->validated(), ['total_amount' => $total]));
+
+        // Sync updated products to pivot table
+        if ($request->filled('products')) {
+            $order->products()->sync(
+                collect($request->products)->mapWithKeys(fn($p) => [
+                    $p['product_id'] => [
+                        'quantity' => $p['quantity'],
+                        'price' => $p['price'],
+                    ]
+                ])->toArray()
+            );
         }
 
-        // Delete related order details first
-        $order->orderDetails()->delete();
+        $order->load('user', 'products.tags');
 
-        // Delete the order
+        return response()->json([
+            'data' => new OrderResource($order),
+            'message' => 'Order updated successfully.'
+        ], 200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Order $order): JsonResponse
+    {
         $order->delete();
 
         return response()->json([
-            'message' => 'Order deleted successfully'
+            'message' => 'Order deleted successfully.'
         ], 200);
     }
-
 }

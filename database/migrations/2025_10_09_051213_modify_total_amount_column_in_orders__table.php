@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
-            $table->id();
-            $table->unique('name');
-            $table->string('desc');
-            $table->timestamps();
+        Schema::table('orders', function (Blueprint $table) {
+
+            $table->decimal('total_amount', 10, 2)->change();
         });
     }
 
@@ -24,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->decimal('total_amount', 8, 2)->change();
+        });
     }
 };

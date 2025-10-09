@@ -5,7 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class OrderRequest extends FormRequest
+
+class CreateCategoryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,20 +24,16 @@ class OrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string',
-            'products' => 'required|array|min:1',
-            'products.*.product_id' => 'required|exists:products,id',
-            'products.*.price' => 'required|numeric|min:0',
-            'products.*.quantity' => 'required|integer|min:1',
+            "name" => "required|string|max:100|unique:categories,name",
+            "desc" => "required"
+
         ];
     }
 
     public function messages(): array
     {
         return [
-            'status.required' => 'The status field is required.',
-            'products.required' => 'At least one product is required in the order.',
-            'products.*.product_id.exists' => 'The selected product does not exist.',
+            'name' => 'The Name has already been taken',
         ];
     }
 }

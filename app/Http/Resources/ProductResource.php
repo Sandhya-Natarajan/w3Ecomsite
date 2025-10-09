@@ -15,25 +15,13 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'Product id' => $this->id,
+            'id' => $this->id,
             'name' => $this->name,
-            'category' => $this->whenLoaded('category', function () {
-                return [
-                    'id' => $this->category->id,
-                    'name' => $this->category->name
-                ];
-            }),
+            'category' => $this->whenLoaded('category', $this->category->makeHidden(['created_at', 'updated_at'])),
             'description' => $this->description,
             'price' => $this->price,
             'stock' => $this->stock,
-            'tag' => $this->whenLoaded('tags', function () {
-                return $this->tags->map(function ($tag) {
-                    return [
-                        'id'   => $tag->id,
-                        'name' => $tag->name,
-                    ];
-                });
-            }),
+            'tags' => $this->whenLoaded('tags', $this->tags->map->only(['id', 'name'])),
             "created_at" => $this->created_at->format("d-m-y"),
             "updated_at" => $this->updated_at->format("d-m-y")
 

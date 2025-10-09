@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProductRequest;
+use App\Http\Requests\CreateProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductCollection;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -20,16 +22,12 @@ class ProductController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Product::query();
 
-        if (!empty($search = $request->get("search"))) {
-            $query->where("name", "like", "%" . $search . "%")
-                ->orWhere("description", "like", "%" . $search . "%");
-        }
-
-        $products = $query->with(['category', 'tags'])
+        $products = Product::with(['category', 'tags'])
+            ->search($request->get('search'))
+            ->category($request->get('category_id'))
             ->latest()
-            ->paginate($request->get("per_page", 10));
+            ->paginate($request->get('per_page', 10));
 
         return response()->json([
             "data" => ProductResource::collection($products),
@@ -45,8 +43,9 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProductRequest $request): JsonResponse
+    public function store(CreateProductRequest $request): JsonResponse
     {
+
         $product = Product::create($request->validated());
 
         if ($request->filled('tag_id')) {
@@ -69,14 +68,14 @@ class ProductController extends Controller
         $product->load(['category', 'tags']);
 
         return response()->json([
-            'data' => new ProductResource($product->load('tags')),
-        ], 201);
+            'data' => new ProductResource($product),
+        ], 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProductRequest $request, Product $product): JsonResponse
+    public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         $product->update($request->validated());
 

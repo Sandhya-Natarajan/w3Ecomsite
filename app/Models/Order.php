@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\OrderDetail;
 use App\Models\Product;
 
 class Order extends Model
@@ -15,9 +14,12 @@ class Order extends Model
     ];
 
     // Relationship with OrderDetail
-    public function OrderDetails() {
+    public function products()
+    {
 
-        return $this->hasMany(OrderDetail::class, 'order_id', 'id');
+        return $this->belongsToMany(Product::class, 'order_product')
+            ->withPivot('quantity', 'price')
+            ->withTimestamps();
     }
 
 
@@ -27,5 +29,22 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function scopeSearch($query, $term)
+    {
+        if ($term) {
+            $query->where('id', $term)
+                ->orWhereHas('user', function ($q) use ($term) {
+                    $q->where('name', 'like', "%{$term}%");
+                });
+        }
+        return $query;
+    }
 
+    /**
+     * Scope for orders created today
+     */
+    public function scopeToday($query)
+    {
+        return $query->whereDate('created_at', today());
+    }
 }

@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Http\Requests\CategoryRequest;
+use App\Http\Requests\CreateCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Category;
 use App\Http\Resources\CategoryResource;
@@ -43,7 +44,7 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(CategoryRequest $request, Category $category): JsonResponse
+    public function store(CreateCategoryRequest $request, Category $category): JsonResponse
     {
         $category = Category::create($request->validated());
 
@@ -66,7 +67,7 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(CategoryRequest $request, Category $category): JsonResponse
+    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
         $category->update($request->validated());
 

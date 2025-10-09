@@ -16,22 +16,27 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status,
+            'user' => $this->whenLoaded('user', $this->user->only(['id', 'name'])),
+
+            // products using map->only
+            'products' => $this->whenLoaded(
+                'products',
+                $this->products->map(function ($product) {
+                    return array_merge(
+                        $product->only(['id', 'name']),
+                        [
+                            'price' => $product->pivot->price,
+                            'quantity' => $product->pivot->quantity,
+                            'subtotal' => $product->pivot->quantity * $product->pivot->price,
+                        ]
+                    );
+                })
+            ),
             'total_amount' => $this->total_amount,
-            'user_id' => $this->user_id,
+            'status' => $this->status,
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
 
-
-            // Include related order details
-            'order_details' => $this->whenLoaded('orderDetails', function () {
-                return $this->orderDetails->map(function ($detail) {
-                    return [
-                        'product_id' => $detail->product_id,
-                        'product_name' => $detail->product->name ?? null, // requires product() relation
-                        'quantity' => $detail->quantity,
-                        'price' => $detail->price,
-                    ];
-                });
-            }),
         ];
     }
 }
