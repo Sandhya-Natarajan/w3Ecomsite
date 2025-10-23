@@ -22,14 +22,11 @@ class UpdateProductRequest extends FormRequest
      */
     public function rules(): array
     {
+        $productId = $this->route("product")->id;
+
         return [
             'category_id' => 'required|exists:categories,id',
-            'name' => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('products', 'name')->ignore($this->product->id),
-            ],
+            'name' => 'sometimes|required|string|max:100|unique:products,name,' . $productId,
             'description' => 'required|string',
             'price' => 'required|numeric',
             'stock' => 'required|string',

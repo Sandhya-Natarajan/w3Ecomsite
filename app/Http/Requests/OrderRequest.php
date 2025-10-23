@@ -23,7 +23,7 @@ class OrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string',
+            'status' => 'nullable|string|in:active,pending,shipped',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.price' => 'required|numeric|min:0',
@@ -34,7 +34,7 @@ class OrderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'status.required' => 'The status field is required.',
+            'status' => 'The status field should be active or pending or shipped.',
             'products.required' => 'At least one product is required in the order.',
             'products.*.product_id.exists' => 'The selected product does not exist.',
         ];

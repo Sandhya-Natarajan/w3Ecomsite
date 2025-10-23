@@ -5,7 +5,6 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\OrderDetailController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,12 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('orders', OrderController::class);
 
-
-    Route::get('tags', [TagController::class, 'tags']);
-    Route::get('tag-detail/{id}', [TagController::class, 'tag']);
-    Route::delete('delete-tag/{id}', [TagController::class, 'DeleteTag']);
-    Route::patch('update-tag/{id}', [TagController::class, 'UpdateTag']);
-    Route::post('add-tag', [TagController::class, 'AddTag']);
+    Route::apiResource('tags', TagController::class);
 });
 
 

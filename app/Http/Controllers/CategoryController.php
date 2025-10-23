@@ -25,7 +25,7 @@ class CategoryController extends Controller
 
         if (!empty($search = $request->get("search"))) {
             $query->where("name", "like", "%" . $search . "%")
-                ->orWhere("desc", "like", "%" . $search . "%");
+                ->orWhere("description", "like", "%" . $search . "%");
         }
 
         $categories = $query->latest()->paginate($request->get("per_page", 10));

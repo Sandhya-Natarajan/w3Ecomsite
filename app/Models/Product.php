@@ -19,32 +19,6 @@ class Product extends Model
         'stock'
     ];
 
-    public function scopeSearch($query, $search)
-    {
-        if (!empty($search)) {
-
-            if (method_exists($query, 'whereAny')) {
-                return $query->whereAny(['name', 'description'], 'like', "%{$search}%");
-            }
-
-            return $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%");
-            });
-        }
-
-        return $query;
-    }
-
-    public function scopeCategory($query, $categoryId)
-    {
-        if (!empty($categoryId)) {
-            return $query->where('category_id', $categoryId);
-        }
-
-        return $query;
-    }
-
 
     /**
      * Many-to-Many relationship with Tag

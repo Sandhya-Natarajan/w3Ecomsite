@@ -29,16 +29,6 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function scopeSearch($query, $term)
-    {
-        if ($term) {
-            $query->where('id', $term)
-                ->orWhereHas('user', function ($q) use ($term) {
-                    $q->where('name', 'like', "%{$term}%");
-                });
-        }
-        return $query;
-    }
 
     /**
      * Scope for orders created today

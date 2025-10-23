@@ -25,7 +25,7 @@ class CreateCategoryRequest extends FormRequest
     {
         return [
             "name" => "required|string|max:100|unique:categories,name",
-            "desc" => "required"
+            "description" => "required"
 
         ];
     }

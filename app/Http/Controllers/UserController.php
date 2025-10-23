@@ -20,8 +20,8 @@ class UserController extends Controller
     {
         $userId = Auth::user()->id;
         $user = User::with('profile')->find($userId);
-        if(!$user) {
-            return response()->json(['message'=>'User not found'],404);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
         }
         return new UserResource($user);
     }
@@ -31,9 +31,10 @@ class UserController extends Controller
     //Display a listing of the resource.
     public function users()
     {
+        //$users = User::with('profile')->onlyTrashed()->get();
         $users = User::with('profile')->get();
-        if(!$users) {
-            return response()->json(['message'=>'User not found'],404);
+        if (!$users) {
+            return response()->json(['message' => 'User not found'], status: 404);
         }
         return new UserCollection($users);
     }
@@ -47,21 +48,21 @@ class UserController extends Controller
 
         //Create User Login
         $user = User::create([
-            'name'=> $request['name'],
-            'email'=> $request['email'],
-            'password'=> bcrypt($request['password']),
+            'name' => $request['name'],
+            'email' => $request['email'],
+            'password' => bcrypt($request['password']),
         ]);
 
         //Create User Profile
         $user->profile()->create([
-            'phone'=> $request['phone'],
+            'phone' => $request['phone'],
             'city' => $request['city'],
             'country' => $request['country'],
-            'address'=> $request['address'],
+            'address' => $request['address'],
             'role' => $request['role'],
         ]);
 
-        return response()->json(['message'=>'User Registered Successfully...']);
+        return response()->json(['message' => 'User Registered Successfully...']);
     }
 
 
@@ -71,27 +72,25 @@ class UserController extends Controller
     public function UpdateUser(UserProfileRequest $request)
     {
         $userId = Auth::user()->id;
-        $user= User::find($userId);
+        $user = User::find($userId);
 
         //Update User Login
         $user->update([
-            'name'=> $request['name'],
-            'email'=> $request['email'],
+            'name' => $request['name'],
+            'email' => $request['email'],
             'password' => $request->filled('password') ? bcrypt($request->password) : $user->password,
         ]);
 
         //Update User Profile
         $user->profile()->update([
-            'phone'=> $request['phone'],
+            'phone' => $request['phone'],
             'city' => $request['city'],
             'country' => $request['country'],
-            'address'=> $request['address'],
+            'address' => $request['address'],
             'role' => $request['role'],
         ]);
 
-        return response()->json(['message'=>'User Updated Successfully...']);
-
-
+        return response()->json(['message' => 'User Updated Successfully...']);
     }
 
 
@@ -104,8 +103,7 @@ class UserController extends Controller
         $user = User::find($userId);
         $user->delete();
 
-        return response()->json(['message'=>'User Deleted Successfully...']);
-
+        return response()->json(['message' => 'User Deleted Successfully...']);
     }
 
 
@@ -115,13 +113,12 @@ class UserController extends Controller
     public function login(Request $request)
     {
         $user = User::where('email', $request->email)->first();
-        if(!$user || !Hash::check($request->password, $user->password))  {
-            return response()->json(['message'=>'User Not Found'] );
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'User Not Found']);
         }
-        $result['token']= $user->createToken('Mytkn')->plainTextToken;
+        $result['token'] = $user->createToken('Mytkn')->plainTextToken;
 
-        return ['result'=> $result, 'message'=>"User Logged In Successfully"] ;
-
+        return ['result' => $result, 'message' => "User Logged In Successfully"];
     }
 
 
@@ -129,8 +126,6 @@ class UserController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message'=>'User Logged Out Successfully...']);
+        return response()->json(['message' => 'User Logged Out Successfully...']);
     }
-
-
 }

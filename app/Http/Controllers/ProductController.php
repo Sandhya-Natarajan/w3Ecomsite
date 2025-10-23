@@ -23,11 +23,26 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
 
-        $products = Product::with(['category', 'tags'])
-            ->search($request->get('search'))
-            ->category($request->get('category_id'))
-            ->latest()
-            ->paginate($request->get('per_page', 10));
+        $query = Product::query();
+
+        if ($search = $request->get("search")) {
+            $query->where(function ($q) use ($search) {
+                $q->where("name", "like", "%{$search}%")
+                    ->orWhere("description", "like", "%{$search}%");
+            });
+        }
+
+        $query->when($request->get('category_id'), function ($q, $categoryId) {
+            $q->where('category_id', $categoryId);
+        });
+
+
+        /*         if ($categoryId = $request->get('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+ */
+        $products = $query->latest()->paginate($request->get("per_page", 10));
+
 
         return response()->json([
             "data" => ProductResource::collection($products),
