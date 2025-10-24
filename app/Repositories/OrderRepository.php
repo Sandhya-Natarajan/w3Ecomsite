@@ -42,4 +42,10 @@ class OrderRepository
     {
         return $order->delete();
     }
+
+    public function countTodayOrders(): int
+    {
+
+        return Order::whereDate('created_at', now()->toDateString())->count();
+    }
 }

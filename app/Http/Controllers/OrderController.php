@@ -6,8 +6,12 @@ use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use App\Models\Order;
 use App\Http\Resources\OrderResource;
+use App\Jobs\SendOrderEmailJob;
 use Illuminate\Http\JsonResponse;
 use App\Services\OrderService;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderEmail;
+
 
 
 
@@ -44,6 +48,8 @@ class OrderController extends Controller
     public function store(OrderRequest $request): JsonResponse
     {
         $order = $this->orderService->createOrder($request->validated());
+
+        SendOrderEmailJob::dispatch($order)->delay(now()->addseconds(10));
 
         return response()->json([
             'message' => 'Order created successfully',

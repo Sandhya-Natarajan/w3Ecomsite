@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Repositories\OrderRepository;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\OrderEmail;
 
 class OrderService
 {
@@ -25,9 +23,9 @@ class OrderService
     public function createOrder(array $validated): ?Order
     {
 
-        $todayOrders = Order::whereDate('created_at', now()->toDateString())->count();
+        $todayOrders = $this->orderRepository->countTodayOrders();
 
-        if ($todayOrders >= 3) {
+        if ($todayOrders >= 6) {
             abort(403, 'Maximum 3 orders per day allowed');
         }
 
@@ -48,7 +46,6 @@ class OrderService
 
         $order->products()->attach($pivotData);
 
-        Mail::to($order->user->email)->send(new OrderEmail($order));
 
         return $order->load('user', 'products');
     }
