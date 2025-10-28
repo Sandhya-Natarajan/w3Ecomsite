@@ -3,11 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\Order;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class OrderRepository
 {
 
-    public function getAllOrders(?string $search, int $perPage = 10)
+    public function getAllOrders(?string $search, int $perPage = 10): LengthAwarePaginator
     {
 
         $query = Order::query();

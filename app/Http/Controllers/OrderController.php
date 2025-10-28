@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderPlaced;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use App\Models\Order;
@@ -11,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use App\Services\OrderService;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderEmail;
+use Illuminate\support\facades\Log;
 
 
 
@@ -49,7 +51,21 @@ class OrderController extends Controller
     {
         $order = $this->orderService->createOrder($request->validated());
 
-        SendOrderEmailJob::dispatch($order)->delay(now()->addseconds(10));
+        try {
+            SendOrderEmailJob::dispatch($order)->delay(now()->addseconds(10));
+
+            event(new OrderPlaced($order));
+        } catch (\Throwable $e) {
+            Log::channel('orderlog')->error('Mail sending failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json(['error' => 'Something went wrong!'], 500);
+        }
+
 
         return response()->json([
             'message' => 'Order created successfully',

@@ -25,7 +25,7 @@ class OrderService
 
         $todayOrders = $this->orderRepository->countTodayOrders();
 
-        if ($todayOrders >= 6) {
+        if ($todayOrders >= 9) {
             abort(403, 'Maximum 3 orders per day allowed');
         }
 
@@ -82,8 +82,8 @@ class OrderService
         return $order->load('user', 'products.tags');
     }
 
-    public function deleteOrder(Order $order)
+    public function deleteOrder(Order $order): bool
     {
-        $this->orderRepository->delete($order);
+        return $this->orderRepository->delete($order);
     }
 }
