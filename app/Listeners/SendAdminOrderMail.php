@@ -7,6 +7,7 @@ use App\Mail\AdminOrderMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Notifications\OrderPlacedNotification;
 
 class SendAdminOrderMail
 {
@@ -23,9 +24,13 @@ class SendAdminOrderMail
      */
     public function handle(OrderPlaced $event): void
     {
-        $order = $event->order;
+        /* $order = $event->order;
         $to = config('mail.from.address');
 
         Mail::to($to)->send(new AdminOrderMail($order));
+ */
+        $user = $event->order->user;
+
+        $user->notify(new OrderPlacedNotification($event->order));
     }
 }

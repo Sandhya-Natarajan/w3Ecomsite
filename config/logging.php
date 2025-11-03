@@ -72,6 +72,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'daily_summary' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/daily_summary.log'),
+            'level' => 'info',
+            'days' => 14, // keep last 14 days
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

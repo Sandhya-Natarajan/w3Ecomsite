@@ -62,7 +62,6 @@ class OrderController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-
             return response()->json(['error' => 'Something went wrong!'], 500);
         }
 
